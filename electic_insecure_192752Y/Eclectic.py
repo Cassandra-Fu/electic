@@ -60,27 +60,10 @@ def get_file(id):
       return send_file(x.get_file_path())
     elif x.get_id() == id and is_authenticated(request) and isinstance(x, Attached_File):
       user = get_user(request)
-      ticket_list = dat_loader.load_data("Tickets")["data"]
-      m_list = []
-      for ticket in ticket_list:
-        if ticket.created_by.get_id() == user.get_id():
-          m_list += ticket.get_messages()
-      f_list = []
-      for message in m_list:
-        m1_list = message.get_files()
-        for file in m1_list:
-          f_list.append(file)
       if x.get_uploaded_by().get_id() == user.get_id() or isinstance(user, Staff):
         return send_file(x.get_file_path())
       else:
-        count = 0
-        for file in f_list:
-          if file.get_id() == x.get_id():
-            return send_file(x.get_file_path())
-          else:
-            count += 1
-        if count == len(f_list):
-          return abort(403)
+        return abort(403)
     elif x.get_id() == id and not is_authenticated(request) and isinstance(x, Attached_File):
       return abort(403)
     else:
@@ -122,8 +105,8 @@ def login():
           s_dat.append(s)
           dat_loader.write_data("Session", s_dat, False)
           resp = make_response(redirect("/dashboard/"))
-          resp.set_cookie("userID", str(user.get_id()))
-          resp.set_cookie("sessionID", s.get_id())
+          resp.set_cookie("userID", str(user.get_id()),httponly=True)
+          resp.set_cookie("sessionID", s.get_id(),httponly=True)
           return resp
         elif isinstance(user, Staff) and user.get_staff_id() == username and user.Check_password(password):
           s = Session(user)
@@ -131,8 +114,8 @@ def login():
           s_dat.append(s)
           dat_loader.write_data("Session", s_dat, False)
           resp = make_response(redirect("/dashboard/"))
-          resp.set_cookie("userID", str(user.get_id()))
-          resp.set_cookie("sessionID", s.get_id())
+          resp.set_cookie("userID", str(user.get_id()),httponly=True)
+          resp.set_cookie("sessionID", s.get_id(),httponly=True)
           return resp
         else:
           counter += 1
@@ -503,7 +486,7 @@ def customer_account_manage_address():
       form.country.data = user.get_country()
       form.postal.data = user.get_address_postal()
       return render_template("pages/customer_pages/account_settings_address.html", form=form, staff=is_staff(request), user=user)
-    elif request.method == "POST":
+    elif request.method == "POST" and form.validate_on_submit():
       c_user = get_user(request)
       user_list = dat_loader.load_data("Users")["data"]
       for user in user_list:
@@ -583,11 +566,7 @@ def inventory_change(id):
           product.retail_price = update_form.retail_price.data
           product.set_description(update_form.description.data)
           product.stock = int(update_form.stock.data)
-          dat_loader.write_data("Products", products, False)
-          cart_list = dat_loader.load_data("Carts")["data"]
-          for cart in cart_list:
-            cart.inventory_update()
-          dat_loader.write_data("Carts", cart_list, False)
+      dat_loader.write_data("Products", products, False)
       return redirect("/dashboard/inventory/")
     else:
       products = dat_loader.load_data("Products")["data"]
@@ -609,15 +588,8 @@ def inventory_change(id):
 def delete_product(id):
   if is_authenticated(request) and is_staff(request):
     products = dat_loader.load_data("Products")["data"]
-    cart_list = dat_loader.load_data("Carts")["data"]
     for product in products:
       if product.get_id() == id:
-        for cart in cart_list:
-          cart_items = cart.get_items()
-          for item in cart_items:
-            if item.product.get_id() == id:
-              cart.remove_item(id)
-        dat_loader.write_data("Carts", cart_list, False)
         products.remove(product)
     dat_loader.write_data("Products", products)
     return redirect("/dashboard/inventory/")
