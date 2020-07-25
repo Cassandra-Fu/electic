@@ -1,57 +1,46 @@
 $(document).ready(function () {
     $(".remove-item").click(function () {
-        swal({
-          title: "Are you sure?",
-          text: "Remove item from cart?",
-          icon: "warning",
-          buttons: true,
-          dangerMode: true,
-        })
-        .then((willremove) => {
-          if (willremove) {
-            const parents = $(this).parents();
-            const parent_q = parents[1].querySelector(".eclectic-quantity");
-            const q_child = $(parent_q).children();
-            const product_id = q_child[0].value;
-            const delete_data = {
-                "id": product_id,
-            };
-            $.ajax({
-                url: "/api-service/cart/delete/",
-                type: "DELETE",
-                contentType: "application/json",
-                data: JSON.stringify(delete_data),
-                success: function() {
-                    swal({
-                      title: "Item removed",
-                      text: "Item removed from cart",
-                      icon: "success",
-                    }).then(() => {
-                        parents[1].remove();
-                        let total = 0;
-                        const all_items = $(".cart-entry");
-                        for (let i = 0; i < all_items.length; i++) {
-                            const p_ele = all_items[i].querySelector(".eclectic-quantity");
-                            const element = $(p_ele).children();
-                            const u_price = parseFloat(all_items[i].querySelector(".eclectic-price").textContent);
-                            let q = parseInt(element[1].value);
-                            if (isNaN(q)) {
-                                q = 0;
-                            }
-                            const sub_t = q * u_price;
-                            total += sub_t;
+        const parents = $(this).parents();
+        const parent_q = parents[1].querySelector(".eclectic-quantity");
+        const q_child = $(parent_q).children();
+        const product_id = q_child[0].value;
+        const delete_data = {
+            "id": product_id,
+        };
+        $.ajax({
+            url: "/api-service/cart/delete/",
+            type: "DELETE",
+            contentType: "application/json",
+            data: JSON.stringify(delete_data),
+            success: function() {
+                swal({
+                  title: "Item removed",
+                  text: "Item removed from cart",
+                  icon: "success",
+                }).then(() => {
+                    parents[1].remove();
+                    let total = 0;
+                    const all_items = $(".cart-entry");
+                    for (let i = 0; i < all_items.length; i++) {
+                        const p_ele = all_items[i].querySelector(".eclectic-quantity");
+                        const element = $(p_ele).children();
+                        const u_price = parseFloat(all_items[i].querySelector(".eclectic-price").textContent);
+                        let q = parseInt(element[1].value);
+                        if (isNaN(q)) {
+                            q = 0;
                         }
-                        $(".eclectic-total > span").text(total.toFixed(2).toString());
-                        if (all_items.length === 0) {
-                            $(".eclectic-table-wrapper").remove();
-                            $(".checkout-btn-container").remove();
-                            const div = $('<h2 class="eclectic-not-found"></h2>').text("Empty Cart");
-                            $("div.margin-left-dashboard").append(div);
-                        }
-                    });
-               }
-            });
-          }
+                        const sub_t = q * u_price;
+                        total += sub_t;
+                    }
+                    $(".eclectic-total > span").text(total.toFixed(2).toString());
+                    if (all_items.length === 0) {
+                        $(".eclectic-table-wrapper").remove();
+                        $(".checkout-btn-container").remove();
+                        const div = $('<h2 class="eclectic-not-found"></h2>').text("Empty Cart");
+                        $("div.margin-left-dashboard").append(div);
+                    }
+                });
+           }
         });
     });
     $(".eclectic-cart-input").change(function () {
@@ -127,6 +116,7 @@ $(document).ready(function () {
                   icon: "error",
               });
               error = true;
+              break;
             }
         }
         if (!error) {
@@ -142,7 +132,10 @@ $(document).ready(function () {
                         title: "Error",
                         icon: "error",
                         text: "Quantity cannot be 0/negative number"
-                    });
+                    })
+                      .then(() => {
+                          break;
+                      })
                 }
                 const i_dat = {
                     "id": product_id,
